@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="Para Yenny · Flores Amarillas">
+<meta property="og:description" content="Te hice un regalo. Ábrelo y sube el volumen.">
+<meta property="og:type" content="website">
+<title>Yenny · Flores Amarillas 🌻</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@1,400;1,600&family=Dancing+Script:wght@400;700&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body{ height:100%; overflow:hidden; background:#000; cursor:default; }
+  #galaxy3d{ position:fixed; inset:0; z-index:1; }
+  #vignette{
+    position:fixed; inset:0; z-index:3; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.75) 100%);
+  }
+
+  /* ---------- escenas ---------- */
+  .scene{
+    position:fixed; inset:0; z-index:10;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; padding:0 9vw;
+    opacity:0; transform:scale(.92); pointer-events:none;
+    transition:opacity 2s cubic-bezier(.22,1,.36,1), transform 2s cubic-bezier(.22,1,.36,1);
+  }
+  .scene.active{ opacity:1; transform:scale(1); }
+
+  .kicker{
+    font-family:'Cinzel',serif; color:#ffdf80; font-size:clamp(12px,1.7vw,18px);
+    letter-spacing:10px; text-transform:uppercase; opacity:.9;
+    animation:breathe 4s ease-in-out infinite;
+  }
+  @keyframes breathe{ 0%,100%{letter-spacing:10px;opacity:.7} 50%{letter-spacing:14px;opacity:1} }
+
+  /* nombre letra por letra */
+  .name{ font-family:'Great Vibes',cursive; margin:1vh 0 2vh; }
+  .name span{
+    display:inline-block; color:#ffd700; font-size:clamp(70px,14vw,170px);
+    text-shadow:0 0 25px rgba(255,215,0,.9), 0 0 80px rgba(255,170,0,.6), 0 0 160px rgba(255,140,0,.4);
+    opacity:0; transform:translateY(70px) rotate(-14deg) scale(.3); filter:blur(14px);
+    transition:all 1.1s cubic-bezier(.2,1.4,.4,1);
+  }
+  .name span.on{ opacity:1; transform:translateY(0) rotate(0) scale(1); filter:blur(0); }
+
+  .line{
+    font-family:'Cormorant Garamond',serif; font-style:italic;
+    color:#f6e7b2; font-size:clamp(19px,2.8vw,32px); line-height:2.1;
+    opacity:0; transform:translateY(34px); filter:blur(8px);
+    transition:opacity 1.5s ease, transform 1.5s ease, filter 1.5s ease;
+    text-shadow:0 0 30px rgba(255,215,0,.35);
+  }
+  .line.on{ opacity:1; transform:translateY(0); filter:blur(0); }
+  .line em{ font-style:normal; font-family:'Dancing Script',cursive; color:#ffd700; font-size:1.3em;
+    text-shadow:0 0 25px rgba(255,215,0,.8); }
+
+  /* girasol final que florece */
+  #sunflower{ transform:scale(0) rotate(-40deg); transition:transform 2.6s cubic-bezier(.34,1.56,.64,1); }
+  .scene.active #sunflower{ transform:scale(1) rotate(0); animation:sway 6s 2.6s ease-in-out infinite; }
+  @keyframes sway{ 0%,100%{transform:scale(1) rotate(-3deg)} 50%{transform:scale(1.06) rotate(3deg)} }
+  #sunflower .petal{ animation:petalGlow 3s ease-in-out infinite; transform-origin:200px 200px; }
+  @keyframes petalGlow{ 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.22)} }
+
+  .final-title{
+    font-family:'Great Vibes',cursive; color:#ffd700; font-size:clamp(34px,6.5vw,72px);
+    text-shadow:0 0 30px rgba(255,215,0,.9),0 0 90px rgba(255,180,0,.5);
+    margin-top:1vh; animation:breathe 3.5s ease-in-out infinite;
+  }
+  .signature{
+    font-family:'Dancing Script',cursive; color:#e9c96e; font-size:clamp(20px,3vw,34px); margin-top:2vh;
+  }
+
+  /* lluvia de pétalos CSS */
+  .petal-fall{
+    position:fixed; top:-60px; z-index:6; pointer-events:none;
+    animation-name:fall; animation-timing-function:linear; animation-iteration-count:infinite;
+  }
+  @keyframes fall{
+    0%{ transform:translateY(-5vh) translateX(0) rotate(0deg); opacity:0 }
+    10%{ opacity:1 }
+    100%{ transform:translateY(110vh) translateX(12vw) rotate(720deg); opacity:.9 }
+  }
+
+  /* pantalla de inicio (para activar música) */
+  #start{
+    position:fixed; inset:0; z-index:99; display:flex; flex-direction:column;
+    justify-content:center; align-items:center; gap:26px;
+    background:radial-gradient(ellipse at center, #14101f 0%, #030308 80%);
+    transition:opacity 1.5s ease;
+  }
+  #start.gone{ opacity:0; pointer-events:none; }
+  #start h1{ font-family:'Great Vibes',cursive; color:#ffd700; font-size:clamp(40px,8vw,90px);
+    text-shadow:0 0 40px rgba(255,215,0,.7); animation:breathe 4s ease-in-out infinite; }
+  #begin{
+    font-family:'Cinzel',serif; letter-spacing:4px; font-size:clamp(15px,2vw,20px);
+    color:#ffd700; background:rgba(255,215,0,.07); border:1px solid rgba(255,215,0,.55);
+    padding:18px 46px; border-radius:60px; cursor:pointer; transition:.4s;
+    box-shadow:0 0 40px rgba(255,215,0,.25);
+  }
+  #begin:hover{ background:rgba(255,215,0,.22); box-shadow:0 0 70px rgba(255,215,0,.7); transform:scale(1.06); }
+  #start p{ color:#8f93b8; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:16px; }
+
+  .mute{
+    position:fixed; top:20px; right:22px; z-index:95; background:none; border:none;
+    font-size:26px; cursor:pointer; opacity:.8; transition:.3s;
+  }
+  .mute:hover{ transform:scale(1.2); }
+</style>
+</head>
+<body>
+
+<canvas id="galaxy3d"></canvas>
+<div id="vignette"></div>
+
+<button class="mute" id="muteBtn" style="display:none">🔊</button>
+
+<!-- INICIO -->
+<div id="start">
+  <h1>Para Yenny 🌻</h1>
+  <button id="begin">✦ Comenzar ✦</button>
+  <p>sube el volumen… te di un regalo 💛</p>
+</div>
+
+<!-- ESCENA 1: nombre -->
+<section class="scene" id="esc1">
+  <div class="kicker">21 · Septiembre · Día de las Flores Amarillas</div>
+  <div class="name"><span>Y</span><span>e</span><span>n</span><span>n</span><span>y</span></div>
+  <p class="line">Hay nombres que suenan a flor…</p>
+</section>
+
+<!-- ESCENA 2 -->
+<section class="scene" id="esc2">
+  <p class="line">De pequeños fuimos un equipo,<br>ya la vida los lleva a cada uno por su lado…</p>
+  <p class="line">pero hay cariños que no se apagan<br>porque el tiempo haya pasado.</p>
+</section>
+
+<!-- ESCENA 3 -->
+<section class="scene" id="esc3">
+  <p class="line">Hoy nos cruzamos con un <em>“hola”</em><br>y cada quien sigue lo suyo,</p>
+  <p class="line">pero quiero que sepas, hermana,<br>que siempre que te veo <em>me alegra</em>.</p>
+</section>
+
+<!-- ESCENA 4 -->
+<section class="scene" id="esc4">
+  <p class="line">Hoy, 21 de septiembre, no quiero flores<br>de estrellas ni del cielo entero…</p>
+  <p class="line">solo quiero que tengas <em>un día lindo</em>.<br>Es poco, pero va con todo el corazón.</p>
+</section>
+
+<!-- ESCENA FINAL -->
+<section class="scene" id="escFin">
+  <svg id="sunflower" width="min(44vmin,340px)" height="min(44vmin,340px)" viewBox="0 0 400 400">
+    <defs>
+      <radialGradient id="petalGrad" cx="50%" cy="15%" r="85%">
+        <stop offset="0%" stop-color="#ffe566"/>
+        <stop offset="45%" stop-color="#ffc61a"/>
+        <stop offset="100%" stop-color="#e08c00"/>
+      </radialGradient>
+      <radialGradient id="petalGrad2" cx="50%" cy="15%" r="85%">
+        <stop offset="0%" stop-color="#f9d23e"/>
+        <stop offset="60%" stop-color="#eda800"/>
+        <stop offset="100%" stop-color="#b97400"/>
+      </radialGradient>
+      <radialGradient id="centerGrad" cx="42%" cy="38%" r="75%">
+        <stop offset="0%" stop-color="#7a4a1f"/>
+        <stop offset="55%" stop-color="#4a2b10"/>
+        <stop offset="100%" stop-color="#2a1708"/>
+      </radialGradient>
+    </defs>
+    <g id="petalsBack"></g>
+    <g id="petalsFront"></g>
+    <circle cx="200" cy="200" r="66" fill="url(#centerGrad)"/>
+    <g id="seeds"></g>
+  </svg>
+  <h2 class="final-title">Feliz Día de las Flores Amarillas</h2>
+  <p class="line on" style="margin-top:2vh;">No necesito una razón para acordarme de ti,<br>pero hoy tenía una buena.<br><b style="color:#ffd700">Yenny</b>, esto es para ti. 💛</p>
+  <p class="signature">Con todo mi amor, tu hermano 🌻</p>
+</section>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ============ GALAXIA 3D ============ */
+const canvas = document.getElementById('galaxy3d');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, .1, 200);
+camera.position.set(0, 2.6, 6.2);
+camera.lookAt(0,0,0);
+
+/* --- espiral de partículas --- */
+const COUNT = 26000, RAD = 8, BRANCHES = 4, SPIN = 1.4;
+const pos = new Float32Array(COUNT*3), col = new Float32Array(COUNT*3);
+const cIn = new THREE.Color('#ffd76a');  // dorado
+const cOut = new THREE.Color('#2b3b6b'); // azul profundo
+for(let i=0;i<COUNT;i++){
+  const i3=i*3;
+  const r = Math.random()*RAD;
+  const branch = (i % BRANCHES) / BRANCHES * Math.PI*2;
+  const spin = r*SPIN;
+  // grosor por rama
+  const rx = Math.pow(Math.random(),3)*(Math.random()<.5?1:-1)*.5*r/RAD;
+  const ry = Math.pow(Math.random(),3)*(Math.random()<.5?1:-1)*.35*r/RAD;
+  const rz = Math.pow(Math.random(),3)*(Math.random()<.5?1:-1)*.5*r/RAD;
+  pos[i3]   = Math.cos(branch+spin)*r + rx;
+  pos[i3+1] = ry;
+  pos[i3+2] = Math.sin(branch+spin)*r + rz;
+  const c = cIn.clone().lerp(cOut, r/RAD + Math.random()*.08);
+  col[i3]=c.r; col[i3+1]=c.g; col[i3+2]=c.b;
+}
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+geo.setAttribute('color', new THREE.BufferAttribute(col,3));
+const mat = new THREE.PointsMaterial({
+  size:.028, sizeAttenuation:true, vertexColors:true,
+  blending:THREE.AdditiveBlending, depthWrite:false, transparent:true
+});
+const galaxy = new THREE.Points(geo,mat);
+scene.add(galaxy);
+
+/* --- campo de estrellas distantas --- */
+const starsGeo = new THREE.BufferGeometry();
+const sp = new Float32Array(4000*3);
+for(let i=0;i<4000*3;i++) sp[i]=(Math.random()-.5)*120;
+starsGeo.setAttribute('position', new THREE.BufferAttribute(sp,3));
+scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({
+  size:.12, color:0xffffff, transparent:true, opacity:.7, depthWrite:false
+})));
+
+/* --- meteoros ocasionales --- */
+const comets = [];
+function comet(){
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(600),3));
+  const m = new THREE.PointsMaterial({size:.09, color:0xffe9a8, transparent:true, opacity:.9, depthWrite:false});
+  const p = new THREE.Points(g,m);
+  p.userData = { ang:Math.random()*Math.PI*2, r:9+Math.random()*6, z:(Math.random()-.5)*8, head:0, t:0 };
+  scene.add(p); comets.push(p);
+}
+
+/* navegación lenta de cámara */
+let mx=0,my=0;
+addEventListener('pointermove',e=>{
+  mx=(e.clientX/innerWidth-.5)*2; my=(e.clientY/innerHeight-.5)*2;
+});
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+const clock = new THREE.Clock();
+let speed = 1, targetZoom = 6.2;
+(function loop(){
+  requestAnimationFrame(loop);
+  const el = clock.getElapsedTime();
+  galaxy.rotation.y = el*.12*speed;
+  // zoom cinematográfico que respira
+  camera.position.z += (targetZoom + Math.sin(el*.25)*.8 - camera.position.z)*.02;
+  camera.position.x += (mx*1.2 - camera.position.x)*.03;
+  camera.position.y += (2.6 - my*1.2 - camera.position.y)*.03;
+  camera.lookAt(0,0,0);
+
+  comets.forEach(p=>{
+    const d=p.userData, a=g=>g.geometry.attributes.position;
+    d.t+=.02;
+    for(let i=0;i<200;i++){
+      const k=i/200*Math.PI;
+      a(p).setXYZ(i, Math.cos(d.ang+d.t)* (d.r-i*.05), d.z + Math.sin(k*i)*.2, Math.sin(d.ang+d.t)*(d.r-i*.05));
+    }
+    a(p).needsUpdate=true;
+  });
+  renderer.render(scene,camera);
+})();
+setInterval(()=>{ if(comets.length<2 && Math.random()<.4) comet(); }, 5000);
+
+/* ============ GIRASOL realista ============ */
+const NS='http://www.w3.org/2000/svg';
+function petalPath(len,wid){
+  // pétalo puntiagudo con curva
+  return `M200 200
+          C ${200-wid} ${200-len*.35}, ${200-wid*.8} ${200-len*.75}, 200 ${200-len}
+          C ${200+wid*.8} ${200-len*.75}, ${200+wid} ${200-len*.35}, 200 200 Z`;
+}
+function makePetals(group,count,len,wid,fill,offset){
+  const g=document.getElementById(group);
+  for(let i=0;i<count;i++){
+    const p=document.createElementNS(NS,'path');
+    p.setAttribute('d',petalPath(len,wid));
+    p.setAttribute('fill',fill);
+    p.setAttribute('stroke','#c78a00');
+    p.setAttribute('stroke-width','1');
+    p.setAttribute('class','petal');
+    p.setAttribute('style',`animation-delay:${(i*.05).toFixed(2)}s; transform:rotate(${offset+i*(360/count)}deg)`);
+    g.appendChild(p);
+  }
+}
+makePetals('petalsBack',26,138,26,'url(#petalGrad2)',0);
+makePetals('petalsFront',21,120,30,'url(#petalGrad)',360/52);
+
+// semillas: espiral de Fibonacci (como un girasol de verdad)
+const seeds=document.getElementById('seeds');
+const GA=Math.PI*(3-Math.sqrt(5));
+for(let i=0;i<320;i++){
+  const r=Math.sqrt(i/320)*58, a=i*GA;
+  const s=document.createElementNS(NS,'circle');
+  s.setAttribute('cx',200+Math.cos(a)*r);
+  s.setAttribute('cy',200+Math.sin(a)*r);
+  s.setAttribute('r',1.6+ (i/320)*1.1);
+  s.setAttribute('fill', i%3? '#3a210c' : '#5c3413');
+  seeds.appendChild(s);
+}
+
+/* ============ LLUVIA DE PÉTALOS ============ */
+function spawnPetals(n=18){
+  const EMO=['🌻','🌼','💛','✨'];
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div');
+    el.className='petal-fall';
+    el.textContent=EMO[Math.floor(Math.random()*EMO.length)];
+    el.style.left=Math.random()*100+'vw';
+    el.style.fontSize=(16+Math.random()*22)+'px';
+    el.style.animationDuration=(9+Math.random()*9)+'s';
+    el.style.animationDelay=(Math.random()*8)+'s';
+    document.body.appendChild(el);
+  }
+}
+spawnPetals();
+
+/* ============ MÚSICA (Web Audio — melodia suave) ============ */
+let audioCtx=null, masterGain, muted=false, musicOn=false;
+document.getElementById('muteBtn').onclick=function(){
+  muted=!muted; this.textContent=muted?'🔇':'🔊';
+  if(masterGain) masterGain.gain.value = muted?0:.5;
+};
+function note(freq, t, dur, type='sine', vol=.22){
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+.04);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(masterGain);
+  o.start(t); o.stop(t+dur+.05);
+}
+function startMusic(){
+  if(musicOn) return; musicOn=true;
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  masterGain = audioCtx.createGain(); masterGain.gain.value=.5;
+  const delay=audioCtx.createDelay(); delay.delayTime.value=.32;
+  const fb=audioCtx.createGain(); fb.gain.value=.35;
+  masterGain.connect(delay); delay.connect(fb); fb.connect(delay);
+  delay.connect(audioCtx.destination); masterGain.connect(audioCtx.destination);
+
+  const A=440, N={C4:261.63,D4:293.66,E4:329.63,G4:392.00,A4:440.00,C5:523.25,D5:587.33,E5:659.25,G5:783.99,A5:880.00,C6:1046.5};
+  const melody=[N.E5,N.C5,N.A4,N.E5, N.D5,N.G4,N.E4,N.G4, N.A4,N.C5,N.E5,N.G5, N.E5,N.D5,N.C5,N.A4];
+  let step=0;
+  setInterval(()=>{
+    if(muted||audioCtx.state==='suspended')return;
+    const t=audioCtx.currentTime;
+    note(melody[step%melody.length], t, 1.6);
+    if(step%4===0) note(melody[step%melody.length]/2, t, 2.4,'triangle',.12); // bajo
+    if(step%2===0) note(melody[(step+4)%melody.length]*2, t+.18, .9,'sine',.06); // brillo agudo
+    step++;
+  }, 480);
+}
+
+/* ============ SECUENCIA DEL SHOW ============ */
+const scenes=[...document.querySelectorAll('.scene')];
+function activate(i){
+  scenes.forEach((s,j)=>{
+    s.classList.remove('active');
+    [s.getElementsByClassName('line'), s.querySelectorAll('.name span')].forEach(c=>{});
+    s.querySelectorAll('.line').forEach(l=>l.classList.remove('on'));
+    s.querySelectorAll('.name span').forEach(sp=>sp.classList.remove('on'));
+  });
+  const sc=scenes[i]; sc.classList.add('active');
+  sc.querySelectorAll('.line').forEach((l,k)=>setTimeout(()=>l.classList.add('on'), 900+k*2300));
+  sc.querySelectorAll('.name span').forEach((sp,k)=>setTimeout(()=>sp.classList.add('on'), 400+k*260));
+}
+
+const TIMES=[0, 9000, 18500, 28000, 37500]; // actual: poema 3 partes + final
+document.getElementById('begin').onclick=()=>{
+  document.getElementById('start').classList.add('gone');
+  document.getElementById('muteBtn').style.display='block';
+  startMusic();
+  activate(0);
+  TIMES.slice(1).forEach((t,k)=>setTimeout(()=>{
+    activate(k+1);
+    targetZoom = k+1===scenes.length-1 ? 4 : 6.2;
+    speed = k+1===scenes.length-1 ? .35 : 1;
+    if(k+1===scenes.length-1) spawnPetals(30);
+  }, t));
+};
+</script>
+</body>
+</html>
