@@ -17,7 +17,19 @@
   #galaxy3d{ position:fixed; inset:0; z-index:1; }
   #vignette{
     position:fixed; inset:0; z-index:3; pointer-events:none;
-    background:radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.75) 100%);
+    background:
+      radial-gradient(ellipse at center, transparent 38%, rgba(4,1,12,.55) 100%),
+      radial-gradient(ellipse at 50% 110%, rgba(255,170,40,.08), transparent 50%);
+  }
+  .gold-mote{
+    position:fixed; z-index:4; pointer-events:none; border-radius:50%;
+    background:#ffe9a0; box-shadow:0 0 8px 2px rgba(255,210,80,.7); opacity:0;
+    animation:mote 8s ease-in-out infinite;
+  }
+  @keyframes mote{
+    0%,100%{opacity:0;transform:translateY(0) scale(.4)}
+    30%{opacity:.9}
+    70%{opacity:.5;transform:translateY(-28px) scale(1)}
   }
 
   /* ---------- escenas ---------- */
@@ -89,20 +101,31 @@
   #start{
     position:fixed; inset:0; z-index:99; display:flex; flex-direction:column;
     justify-content:center; align-items:center; gap:26px;
-    background:radial-gradient(ellipse at center, #14101f 0%, #030308 80%);
-    transition:opacity 1.5s ease;
+    background:radial-gradient(ellipse at 50% 48%, rgba(4,1,12,.08) 0%, rgba(4,1,12,.42) 100%);
+    transition:opacity 1.15s ease;
   }
   #start.gone{ opacity:0; pointer-events:none; }
-  #start h1{ font-family:'Great Vibes',cursive; color:#ffd700; font-size:clamp(40px,8vw,90px);
-    text-shadow:0 0 40px rgba(255,215,0,.7); animation:breathe 4s ease-in-out infinite; }
+  #start .kicker-s{
+    font-family:'Cinzel',serif; letter-spacing:8px; text-transform:uppercase;
+    color:#ffdf80; font-size:clamp(11px,1.5vw,14px); opacity:.85;
+  }
+  #start h1{ font-family:'Great Vibes',cursive; color:#ffd700; font-size:clamp(52px,11vw,118px);
+    line-height:1; text-shadow:0 0 30px rgba(255,215,0,.9), 0 0 80px rgba(255,170,0,.6), 0 0 160px rgba(255,120,0,.35);
+    animation:titlePulse 4s ease-in-out infinite; }
+  @keyframes titlePulse{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.035)} }
   #begin{
     font-family:'Cinzel',serif; letter-spacing:4px; font-size:clamp(15px,2vw,20px);
-    color:#ffd700; background:rgba(255,215,0,.07); border:1px solid rgba(255,215,0,.55);
+    color:#ffd700; background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.6);
     padding:18px 46px; border-radius:60px; cursor:pointer; transition:.4s;
-    box-shadow:0 0 40px rgba(255,215,0,.25);
+    box-shadow:0 0 40px rgba(255,215,0,.28), inset 0 0 24px rgba(255,215,0,.08);
+    animation:btnGlow 3.2s ease-in-out infinite;
   }
-  #begin:hover{ background:rgba(255,215,0,.22); box-shadow:0 0 70px rgba(255,215,0,.7); transform:scale(1.06); }
-  #start p{ color:#8f93b8; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:16px; }
+  @keyframes btnGlow{
+    0%,100%{box-shadow:0 0 30px rgba(255,215,0,.25)}
+    50%{box-shadow:0 0 70px rgba(255,215,0,.7)}
+  }
+  #begin:hover{ background:rgba(255,215,0,.24); box-shadow:0 0 80px rgba(255,215,0,.85); transform:scale(1.04); }
+  #start p{ color:#c4c0e0; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:16px; text-shadow:0 2px 16px rgba(0,0,0,.8); }
 
   .mute{
     position:fixed; top:20px; right:22px; z-index:95; background:none; border:none;
@@ -120,9 +143,10 @@
 
 <!-- INICIO -->
 <div id="start">
-  <h1>Para Yenny 🌻</h1>
-  <button id="begin">✦ Comenzar ✦</button>
-  <p>sube el volumen… te di un regalo 💛</p>
+  <div class="kicker-s">21 · Septiembre</div>
+  <h1>Para Yenny</h1>
+  <button id="begin">Comenzar</button>
+  <p>sube el volumen… te di un regalo</p>
 </div>
 
 <!-- ESCENA 1: nombre -->
@@ -187,101 +211,223 @@
 <script type="module">
 import * as THREE from 'three';
 
-/* ============ GALAXIA 3D ============ */
+function canvasTex(size, draw){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const ctx=c.getContext('2d'); draw(ctx,size);
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.needsUpdate=true; return tex;
+}
+const soft=canvasTex(64,(ctx,s)=>{
+  const g=ctx.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.18,'rgba(255,250,220,.9)');
+  g.addColorStop(.42,'rgba(255,210,120,.35)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
+});
+const flowerMap=canvasTex(128,(ctx,s)=>{
+  ctx.translate(s/2,s/2);
+  for(let i=0;i<12;i++){
+    ctx.save(); ctx.rotate(i/12*Math.PI*2);
+    const g=ctx.createRadialGradient(0,-26,1,0,-26,28);
+    g.addColorStop(0,'rgba(255,255,230,1)'); g.addColorStop(.22,'rgba(255,220,70,.98)');
+    g.addColorStop(.65,'rgba(255,168,0,.55)'); g.addColorStop(1,'rgba(200,90,0,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(0,-24,10,28,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+  }
+  const cg=ctx.createRadialGradient(0,0,0,0,0,14);
+  cg.addColorStop(0,'#7a4a18'); cg.addColorStop(.55,'#3d210c'); cg.addColorStop(1,'rgba(20,8,0,0)');
+  ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill();
+});
+const glowMap=canvasTex(256,(ctx,s)=>{
+  const g=ctx.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,'rgba(255,255,240,1)'); g.addColorStop(.08,'rgba(255,230,140,.85)');
+  g.addColorStop(.22,'rgba(255,180,40,.4)'); g.addColorStop(.5,'rgba(180,80,20,.12)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
+});
+const nebulaMap=canvasTex(256,(ctx,s)=>{
+  [[.5,.5,.55,'rgba(255,190,60,.45)'],[.32,.4,.38,'rgba(160,70,180,.28)'],[.68,.58,.34,'rgba(70,90,200,.3)'],[.45,.62,.3,'rgba(255,120,40,.22)']].forEach(([x,y,r,col])=>{
+    const g=ctx.createRadialGradient(x*s,y*s,0,x*s,y*s,r*s); g.addColorStop(0,col); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
+  });
+});
+
+const DUST_VERT=`attribute float aScale; attribute float aRandom; uniform float uTime; uniform float uSize; uniform float uBurst; varying vec3 vColor; varying float vAlpha;
+void main(){ vec3 p=position; p.y+=sin(uTime*(.15+aRandom*.4)+aRandom*12.)*.08; vec4 mv=modelViewMatrix*vec4(p,1.); float tw=.55+.45*sin(uTime*(1.4+aRandom*3.2)+aRandom*18.);
+gl_PointSize=uSize*aScale*tw*(1.+uBurst*(.6+aRandom))*(280./-mv.z); gl_Position=projectionMatrix*mv; vColor=color; vAlpha=tw; }`;
+const DUST_FRAG=`uniform sampler2D uMap; varying vec3 vColor; varying float vAlpha;
+void main(){ vec4 tex=texture2D(uMap,gl_PointCoord); if(tex.a<.04) discard; gl_FragColor=vec4(vColor,1.)*tex; gl_FragColor.a*=vAlpha; }`;
+const FLOWER_VERT=`attribute float aScale; attribute float aRandom; uniform float uTime; uniform float uSize; uniform float uBurst; varying vec3 vColor; varying float vRand;
+void main(){ vec3 p=position; p.y+=sin(uTime*.7+aRandom*9.)*.06; vec4 mv=modelViewMatrix*vec4(p,1.); float pulse=.85+.15*sin(uTime*1.6+aRandom*10.);
+gl_PointSize=uSize*aScale*pulse*(1.+uBurst*.8)*(300./-mv.z); gl_Position=projectionMatrix*mv; vColor=color; vRand=aRandom; }`;
+const FLOWER_FRAG=`uniform sampler2D uMap; uniform float uTime; varying vec3 vColor; varying float vRand;
+void main(){ vec2 uv=gl_PointCoord-.5; float a=uTime*.25+vRand*6.28318; float c=cos(a),s=sin(a); vec2 ruv=vec2(c*uv.x-s*uv.y,s*uv.x+c*uv.y)+.5;
+vec4 tex=texture2D(uMap,ruv); if(tex.a<.08) discard; gl_FragColor=tex*vec4(vColor,1.); }`;
+
 const canvas = document.getElementById('galaxy3d');
-const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const mobile = innerWidth<700;
+const renderer = new THREE.WebGLRenderer({canvas, antialias:!mobile, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio, mobile?1.35:1.75));
 renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x04010c,1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, .1, 200);
-camera.position.set(0, 2.6, 6.2);
+const camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, .1, 400);
+camera.position.set(0, 2.2, 7.6);
 camera.lookAt(0,0,0);
 
-/* --- espiral de partículas --- */
-const COUNT = 26000, RAD = 8, BRANCHES = 4, SPIN = 1.4;
-const pos = new Float32Array(COUNT*3), col = new Float32Array(COUNT*3);
-const cIn = new THREE.Color('#ffd76a');  // dorado
-const cOut = new THREE.Color('#2b3b6b'); // azul profundo
+const COUNT = mobile?14000:28000, RAD=9.2, BRANCHES=5, SPIN=1.7;
+const pos=new Float32Array(COUNT*3), col=new Float32Array(COUNT*3), scale=new Float32Array(COUNT), rand=new Float32Array(COUNT);
+const cCore=new THREE.Color('#fff6c8'), cGold=new THREE.Color('#ffc44d'), cRose=new THREE.Color('#ff7a3a'), cOut=new THREE.Color('#1b1548');
 for(let i=0;i<COUNT;i++){
-  const i3=i*3;
-  const r = Math.random()*RAD;
-  const branch = (i % BRANCHES) / BRANCHES * Math.PI*2;
-  const spin = r*SPIN;
-  // grosor por rama
-  const rx = Math.pow(Math.random(),3)*(Math.random()<.5?1:-1)*.5*r/RAD;
-  const ry = Math.pow(Math.random(),3)*(Math.random()<.5?1:-1)*.35*r/RAD;
-  const rz = Math.pow(Math.random(),3)*(Math.random()<.5?1:-1)*.5*r/RAD;
-  pos[i3]   = Math.cos(branch+spin)*r + rx;
-  pos[i3+1] = ry;
-  pos[i3+2] = Math.sin(branch+spin)*r + rz;
-  const c = cIn.clone().lerp(cOut, r/RAD + Math.random()*.08);
-  col[i3]=c.r; col[i3+1]=c.g; col[i3+2]=c.b;
+  const i3=i*3, r=Math.pow(Math.random(),.55)*RAD, branch=(i%BRANCHES)/BRANCHES*Math.PI*2, spin=r*SPIN;
+  const spread=Math.pow(Math.random(),2.6)*(r/RAD)*1.15, sign=Math.random()<.5?1:-1;
+  pos[i3]=Math.cos(branch+spin)*r+Math.cos(branch)*spread*sign;
+  pos[i3+1]=Math.pow(Math.random(),3)*sign*.42*(r/RAD)+(Math.random()-.5)*.12;
+  pos[i3+2]=Math.sin(branch+spin)*r+Math.sin(branch)*spread*sign;
+  const t=r/RAD;
+  const mix=t<.35?cCore.clone().lerp(cGold,t/.35):t<.7?cGold.clone().lerp(cRose,(t-.35)/.35):cRose.clone().lerp(cOut,(t-.7)/.3);
+  mix.offsetHSL(0,0,(Math.random()-.5)*.08);
+  col[i3]=mix.r; col[i3+1]=mix.g; col[i3+2]=mix.b; scale[i]=Math.random()*1.6+.35; rand[i]=Math.random();
 }
-const geo = new THREE.BufferGeometry();
-geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
-geo.setAttribute('color', new THREE.BufferAttribute(col,3));
-const mat = new THREE.PointsMaterial({
-  size:.028, sizeAttenuation:true, vertexColors:true,
-  blending:THREE.AdditiveBlending, depthWrite:false, transparent:true
+const dustGeo=new THREE.BufferGeometry();
+dustGeo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+dustGeo.setAttribute('color', new THREE.BufferAttribute(col,3));
+dustGeo.setAttribute('aScale', new THREE.BufferAttribute(scale,1));
+dustGeo.setAttribute('aRandom', new THREE.BufferAttribute(rand,1));
+const dustMat=new THREE.ShaderMaterial({
+  uniforms:{uTime:{value:0},uSize:{value:mobile?32:44},uBurst:{value:0},uMap:{value:soft}},
+  vertexShader:DUST_VERT, fragmentShader:DUST_FRAG, transparent:true, depthWrite:false,
+  blending:THREE.AdditiveBlending, vertexColors:true
 });
-const galaxy = new THREE.Points(geo,mat);
-scene.add(galaxy);
+const galaxy=new THREE.Points(dustGeo,dustMat); scene.add(galaxy);
 
-/* --- campo de estrellas distantas --- */
-const starsGeo = new THREE.BufferGeometry();
-const sp = new Float32Array(4000*3);
-for(let i=0;i<4000*3;i++) sp[i]=(Math.random()-.5)*120;
-starsGeo.setAttribute('position', new THREE.BufferAttribute(sp,3));
-scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({
-  size:.12, color:0xffffff, transparent:true, opacity:.7, depthWrite:false
-})));
+const GLOW_N=mobile?700:1400;
+const gPos=new Float32Array(GLOW_N*3), gCol=new Float32Array(GLOW_N*3), gSc=new Float32Array(GLOW_N), gRd=new Float32Array(GLOW_N);
+for(let i=0;i<GLOW_N;i++){
+  const src=Math.floor(i/GLOW_N*COUNT)*3;
+  gPos[i*3]=pos[src]; gPos[i*3+1]=pos[src+1]; gPos[i*3+2]=pos[src+2];
+  gCol[i*3]=col[src]; gCol[i*3+1]=col[src+1]; gCol[i*3+2]=col[src+2];
+  gSc[i]=1.2+Math.random(); gRd[i]=Math.random();
+}
+const glowGeo=new THREE.BufferGeometry();
+glowGeo.setAttribute('position', new THREE.BufferAttribute(gPos,3));
+glowGeo.setAttribute('color', new THREE.BufferAttribute(gCol,3));
+glowGeo.setAttribute('aScale', new THREE.BufferAttribute(gSc,1));
+glowGeo.setAttribute('aRandom', new THREE.BufferAttribute(gRd,1));
+const glowMat=dustMat.clone();
+glowMat.uniforms={uTime:{value:0},uSize:{value:mobile?64:90},uBurst:{value:0},uMap:{value:glowMap}};
+const glowCloud=new THREE.Points(glowGeo,glowMat); scene.add(glowCloud);
 
-/* --- meteoros ocasionales --- */
-const comets = [];
-function comet(){
-  const g = new THREE.BufferGeometry();
-  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(600),3));
-  const m = new THREE.PointsMaterial({size:.09, color:0xffe9a8, transparent:true, opacity:.9, depthWrite:false});
-  const p = new THREE.Points(g,m);
-  p.userData = { ang:Math.random()*Math.PI*2, r:9+Math.random()*6, z:(Math.random()-.5)*8, head:0, t:0 };
-  scene.add(p); comets.push(p);
+const STAR_N=mobile?1600:3200;
+const starPos=new Float32Array(STAR_N*3), starCol=new Float32Array(STAR_N*3), starSc=new Float32Array(STAR_N), starRd=new Float32Array(STAR_N);
+for(let i=0;i<STAR_N;i++){
+  starPos[i*3]=(Math.random()-.5)*160; starPos[i*3+1]=(Math.random()-.5)*90; starPos[i*3+2]=(Math.random()-.5)*160;
+  const sc=Math.random()>.7?new THREE.Color('#c9d4ff'):new THREE.Color('#fff8e4');
+  starCol[i*3]=sc.r; starCol[i*3+1]=sc.g; starCol[i*3+2]=sc.b; starSc[i]=Math.random()*1.8+.4; starRd[i]=Math.random();
+}
+const starGeo=new THREE.BufferGeometry();
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+starGeo.setAttribute('color', new THREE.BufferAttribute(starCol,3));
+starGeo.setAttribute('aScale', new THREE.BufferAttribute(starSc,1));
+starGeo.setAttribute('aRandom', new THREE.BufferAttribute(starRd,1));
+const starMat=dustMat.clone();
+starMat.uniforms={uTime:{value:0},uSize:{value:mobile?18:26},uBurst:{value:0},uMap:{value:soft}};
+scene.add(new THREE.Points(starGeo,starMat));
+
+const F_N=mobile?420:900;
+const fPos=new Float32Array(F_N*3), fCol=new Float32Array(F_N*3), fSc=new Float32Array(F_N), fRd=new Float32Array(F_N);
+const golds=['#ffe566','#ffd24a','#ffb703','#fff1a8'].map(h=>new THREE.Color(h));
+for(let i=0;i<F_N;i++){
+  const r=.55+Math.pow(Math.random(),.7)*7.4, branch=(i%BRANCHES)/BRANCHES*Math.PI*2+.12, spin=r*SPIN;
+  fPos[i*3]=Math.cos(branch+spin)*r+(Math.random()-.5)*.28;
+  fPos[i*3+1]=(Math.random()-.5)*.38;
+  fPos[i*3+2]=Math.sin(branch+spin)*r+(Math.random()-.5)*.28;
+  const gc=golds[i%golds.length]; fCol[i*3]=gc.r; fCol[i*3+1]=gc.g; fCol[i*3+2]=gc.b;
+  fSc[i]=.7+Math.random()*1.4; fRd[i]=Math.random();
+}
+const fGeo=new THREE.BufferGeometry();
+fGeo.setAttribute('position', new THREE.BufferAttribute(fPos,3));
+fGeo.setAttribute('color', new THREE.BufferAttribute(fCol,3));
+fGeo.setAttribute('aScale', new THREE.BufferAttribute(fSc,1));
+fGeo.setAttribute('aRandom', new THREE.BufferAttribute(fRd,1));
+const fMat=new THREE.ShaderMaterial({
+  uniforms:{uTime:{value:0},uSize:{value:mobile?52:78},uBurst:{value:0},uMap:{value:flowerMap}},
+  vertexShader:FLOWER_VERT, fragmentShader:FLOWER_FRAG, transparent:true, depthWrite:false,
+  blending:THREE.AdditiveBlending, vertexColors:true
+});
+const flowers=new THREE.Points(fGeo,fMat); scene.add(flowers);
+
+const nebulaGroup=new THREE.Group();
+const nebMat=new THREE.SpriteMaterial({map:nebulaMap, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false, opacity:.5});
+for(let i=0;i<6;i++){
+  const spr=new THREE.Sprite(nebMat.clone());
+  const ang=i/6*Math.PI*2;
+  spr.position.set(Math.cos(ang)*3.2, i%2?.4:-.3, Math.sin(ang)*3.2);
+  const sc=4.8+(i%3); spr.scale.set(sc, sc*.72, 1); nebulaGroup.add(spr);
+}
+scene.add(nebulaGroup);
+
+const coreMat=new THREE.SpriteMaterial({map:glowMap, blending:THREE.AdditiveBlending, transparent:true, depthWrite:false});
+const core=new THREE.Sprite(coreMat); core.scale.set(4.2,4.2,1); scene.add(core);
+const core2=new THREE.Sprite(coreMat.clone()); core2.material.color.set('#fff4cc'); scene.add(core2);
+
+const ringGeo=new THREE.RingGeometry(2.05,2.1,128);
+const ringMat=new THREE.MeshBasicMaterial({color:0xffd36a, transparent:true, opacity:.5, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false});
+const ring=new THREE.Mesh(ringGeo,ringMat); ring.rotation.x=Math.PI*.42; scene.add(ring);
+const ring2=new THREE.Mesh(ringGeo, ringMat.clone()); ring2.material.opacity=.22; ring2.rotation.x=Math.PI*.58; ring2.rotation.z=.4; ring2.scale.setScalar(1.35); scene.add(ring2);
+
+const streaks=[];
+const streakGeo=new THREE.PlaneGeometry(.05,2.6);
+const streakMat=new THREE.MeshBasicMaterial({color:0xffe7b0, transparent:true, opacity:.9, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide});
+function spawnStreak(){
+  if(streaks.length>4) return;
+  const mesh=new THREE.Mesh(streakGeo, streakMat.clone());
+  mesh.position.set((Math.random()-.5)*18, 6+Math.random()*5, (Math.random()-.5)*12);
+  const vel=new THREE.Vector3(-6-Math.random()*5, -8-Math.random()*4, (Math.random()-.5)*2);
+  mesh.lookAt(mesh.position.clone().add(vel));
+  scene.add(mesh); streaks.push({mesh, vel, life:1});
 }
 
-/* navegación lenta de cámara */
-let mx=0,my=0;
-addEventListener('pointermove',e=>{
-  mx=(e.clientX/innerWidth-.5)*2; my=(e.clientY/innerHeight-.5)*2;
-});
-addEventListener('resize',()=>{
-  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-});
+let mx=0,my=0, started=false;
+addEventListener('pointermove',e=>{ mx=(e.clientX/innerWidth-.5)*2; my=(e.clientY/innerHeight-.5)*2; }, {passive:true});
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
-const clock = new THREE.Clock();
-let speed = 1, targetZoom = 6.2;
+const clock=new THREE.Clock();
+let speed=0.5, targetZoom=7.6, uBurst=0, streakAcc=0;
 (function loop(){
   requestAnimationFrame(loop);
-  const el = clock.getElapsedTime();
-  galaxy.rotation.y = el*.12*speed;
-  // zoom cinematográfico que respira
-  camera.position.z += (targetZoom + Math.sin(el*.25)*.8 - camera.position.z)*.02;
-  camera.position.x += (mx*1.2 - camera.position.x)*.03;
-  camera.position.y += (2.6 - my*1.2 - camera.position.y)*.03;
-  camera.lookAt(0,0,0);
-
-  comets.forEach(p=>{
-    const d=p.userData, a=g=>g.geometry.attributes.position;
-    d.t+=.02;
-    for(let i=0;i<200;i++){
-      const k=i/200*Math.PI;
-      a(p).setXYZ(i, Math.cos(d.ang+d.t)* (d.r-i*.05), d.z + Math.sin(k*i)*.2, Math.sin(d.ang+d.t)*(d.r-i*.05));
-    }
-    a(p).needsUpdate=true;
-  });
+  const dt=Math.min(clock.getDelta(),.05), el=clock.elapsedTime;
+  dustMat.uniforms.uTime.value=el; dustMat.uniforms.uBurst.value=uBurst;
+  glowMat.uniforms.uTime.value=el; glowMat.uniforms.uBurst.value=uBurst;
+  starMat.uniforms.uTime.value=el; fMat.uniforms.uTime.value=el; fMat.uniforms.uBurst.value=uBurst;
+  uBurst += ((targetZoom<4.5?1:0)-uBurst)*.02;
+  galaxy.rotation.y=el*.07*speed; glowCloud.rotation.y=galaxy.rotation.y;
+  flowers.rotation.y=el*.075*speed; nebulaGroup.rotation.y=el*.03*speed;
+  ring.rotation.z=el*.12*speed; ring2.rotation.z=-el*.08*speed;
+  const pulse=4+Math.sin(el*1.4)*.35; core.scale.set(pulse,pulse,1);
+  core2.scale.set(1.35+Math.sin(el*2.1)*.2, 1.35+Math.sin(el*2.1)*.2, 1);
+  const orbit=started?Math.sin(el*.11)*.9:Math.sin(el*.08)*1.4;
+  camera.position.z+=(targetZoom+Math.sin(el*.18)*.55-camera.position.z)*.025;
+  camera.position.x+=(orbit+mx*1.35-camera.position.x)*.035;
+  camera.position.y+=((targetZoom<4.5?1.4:2.15)-my*1.05+Math.sin(el*.16)*.25-camera.position.y)*.035;
+  camera.lookAt(0,.1,0);
+  streakAcc+=dt;
+  if(streakAcc>1.7){ streakAcc=0; if(Math.random()<.7) spawnStreak(); }
+  for(let i=streaks.length-1;i>=0;i--){
+    const s=streaks[i]; s.mesh.position.addScaledVector(s.vel,dt); s.life-=dt*.45;
+    s.mesh.material.opacity=Math.max(0,s.life);
+    if(s.life<=0){ scene.remove(s.mesh); s.mesh.material.dispose(); streaks.splice(i,1); }
+  }
   renderer.render(scene,camera);
 })();
-setInterval(()=>{ if(comets.length<2 && Math.random()<.4) comet(); }, 5000);
+
+for(let i=0;i<40;i++){
+  const m=document.createElement('span'); m.className='gold-mote';
+  m.style.left=((i*23+5)%100)+'%'; m.style.top=((i*37+11)%100)+'%';
+  m.style.width=m.style.height=(1.5+i%5)+'px';
+  m.style.animationDelay=(i%12)*.45+'s'; m.style.animationDuration=(7+i%9)+'s';
+  document.body.appendChild(m);
+}
 
 /* ============ GIRASOL realista ============ */
 const NS='http://www.w3.org/2000/svg';
@@ -391,12 +537,13 @@ const TIMES=[0, 9000, 18500, 28000, 37500]; // actual: poema 3 partes + final
 document.getElementById('begin').onclick=()=>{
   document.getElementById('start').classList.add('gone');
   document.getElementById('muteBtn').style.display='block';
+  started=true; speed=1; targetZoom=5.15;
   startMusic();
   activate(0);
   TIMES.slice(1).forEach((t,k)=>setTimeout(()=>{
     activate(k+1);
-    targetZoom = k+1===scenes.length-1 ? 4 : 6.2;
-    speed = k+1===scenes.length-1 ? .35 : 1;
+    targetZoom = k+1===scenes.length-1 ? 3.15 : 5.15;
+    speed = k+1===scenes.length-1 ? .28 : 1;
     if(k+1===scenes.length-1) spawnPetals(30);
   }, t));
 };
